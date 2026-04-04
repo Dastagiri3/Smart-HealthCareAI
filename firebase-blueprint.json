@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile information, including roles.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's full name." },
+        "photoURL": { "type": "string", "format": "uri", "description": "The user's profile picture URL." },
+        "role": { "type": "string", "enum": ["patient", "admin"], "description": "The user's role in the system." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the user profile was created." }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Doctor": {
+      "title": "Doctor",
+      "description": "Stores information about doctors.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "specialty": { "type": "string" },
+        "department": { "type": "string" },
+        "experience": { "type": "number" },
+        "bio": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "availability": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "specialty", "department"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Stores appointment details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled", "completed"] },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "doctorId", "date", "time", "status"]
+    },
+    "Report": {
+      "title": "Medical Report",
+      "description": "Stores patient medical reports.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "title": { "type": "string" },
+        "fileURL": { "type": "string", "format": "uri" },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "title", "fileURL"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles." },
+    "/doctors/{doctorId}": { "schema": "Doctor", "description": "Doctor information." },
+    "/appointments/{appointmentId}": { "schema": "Appointment", "description": "Appointment records." },
+    "/reports/{reportId}": { "schema": "Report", "description": "Patient medical reports." }
+  }
+}

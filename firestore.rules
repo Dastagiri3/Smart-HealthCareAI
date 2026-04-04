@@ -1,0 +1,149 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required, format: email)
+    //   - displayName: string
+    //   - photoURL: string (format: uri)
+    //   - role: string (required, enum: ['patient', 'admin'])
+    //   - createdAt: string (format: date-time)
+    //
+    // Collection: doctors
+    // Document ID: {doctorId}
+    // Fields:
+    //   - id: string
+    //   - name: string (required)
+    //   - specialty: string (required)
+    //   - department: string (required)
+    //   - experience: number
+    //   - bio: string
+    //   - photoURL: string (format: uri)
+    //   - availability: list
+    //
+    // Collection: appointments
+    // Document ID: {appointmentId}
+    // Fields:
+    //   - id: string
+    //   - patientId: string (required)
+    //   - patientName: string
+    //   - doctorId: string (required)
+    //   - doctorName: string
+    //   - date: string (required, format: date)
+    //   - time: string (required)
+    //   - status: string (required, enum: ['pending', 'confirmed', 'cancelled', 'completed'])
+    //   - reason: string
+    //   - createdAt: string (format: date-time)
+    //
+    // Collection: reports
+    // Document ID: {reportId}
+    // Fields:
+    //   - id: string
+    //   - patientId: string (required)
+    //   - title: string (required)
+    //   - fileURL: string (required, format: uri)
+    //   - uploadedAt: string (format: date-time)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "gurudastagiri3@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'role', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['patient', 'admin'] &&
+             (data.photoURL == null || isValidUrl(data.photoURL));
+    }
+
+    function isValidDoctor(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'specialty', 'department', 'experience', 'bio', 'photoURL', 'availability']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.specialty is string && data.department is string;
+    }
+
+    function isValidAppointment(data) {
+      return hasOnlyAllowedFields(['id', 'patientId', 'patientName', 'doctorId', 'doctorName', 'date', 'time', 'status', 'reason', 'createdAt']) &&
+             data.patientId is string && data.doctorId is string &&
+             data.date is string && data.time is string &&
+             data.status in ['pending', 'confirmed', 'cancelled', 'completed'];
+    }
+
+    function isValidReport(data) {
+      return hasOnlyAllowedFields(['id', 'patientId', 'title', 'fileURL', 'uploadedAt']) &&
+             data.patientId is string && data.title is string &&
+             data.fileURL is string && isValidUrl(data.fileURL);
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+    }
+
+    match /doctors/{doctorId} {
+      allow read: if true; // Publicly viewable
+      allow write: if isAdmin();
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.patientId || isAdmin());
+      allow create: if isAuthenticated() && isValidAppointment(request.resource.data) && (request.auth.uid == request.resource.data.patientId || isAdmin());
+      allow update: if isAuthenticated() && isValidAppointment(request.resource.data) && (request.auth.uid == resource.data.patientId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.patientId || isAdmin());
+      allow create: if isAuthenticated() && isValidReport(request.resource.data) && (request.auth.uid == request.resource.data.patientId || isAdmin());
+      allow update: if isAuthenticated() && isValidReport(request.resource.data) && (request.auth.uid == resource.data.patientId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
