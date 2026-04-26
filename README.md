@@ -105,7 +105,7 @@ This project is licensed under the MIT License.
 
 👨‍💻 Author
 
-Dastagiri Guru
+Dastagiri Jillela
 🔗 GitHub: https://github.com/Dastagiri3
 
 ⭐ Support
