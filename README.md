@@ -70,15 +70,18 @@ Machine Learning Model
 Prediction & Response
 📦 Installation & Setup
 1. Clone the Repository
-git clone https://github.com/Dastagiri3/Smart-HealthCareAI.git
+2.git clone https://github.com/Dastagiri3/Smart-HealthCareAI.git
+
 cd Smart-HealthCareAI
-2. Create Virtual Environment
+
+3. Create Virtual Environment
+4. 
 python -m venv venv
 source venv/bin/activate   # Linux/Mac
 venv\Scripts\activate      # Windows
-3. Install Dependencies
+5. Install Dependencies
 pip install -r requirements.txt
-4. Run the Application
+6. Run the Application
 python app.py
 📊 Future Enhancements
 🧬 Integration with real medical datasets
